@@ -1,0 +1,66 @@
+---
+title: "Analysis of Model Features"
+output: html_notebook
+---
+
+Exploratory analysis of all features used in the creation of the NFL Betting Model.
+
+```{r}
+nflModelData <- read.csv("/Users/anguslai/Documents/HBA2/Intro to Data Sci/Group Project/Data/final_v3.csv", head=TRUE)
+head(nflModelData)
+```
+
+Charts 
+
+```{r}
+plot(nflModelData$win_loss,xlab="Team",ylab="Number of Wins",main="Team Wins by Classification")
+print(paste0("Teams that were the favourite won ", (round(sum(nflModelData$win_loss == "fav")/nrow(nflModelData),3)*100),"% of games"))
+```
+
+```{r}
+IsFav = ("fav" == nflModelData$win_loss)
+IsHomeFav = ("home_fav" == nflModelData$home_fav)
+print(paste0("Teams that were the favourite to win and played at home won ",round(sum(IsFavAndHomeFav = (IsFav & IsHomeFav))/sum(IsHomeFav)*100,1),"% of games."))
+```
+
+
+```{r}
+library(ggplot2)
+ggplot(nflModelData, aes(x=nflModelData$schedule_season, y=nflModelData$over_under_line)) + geom_point(color="#69b3a2") + geom_smooth(method=lm , color="red", se=FALSE) + labs(title="Over/Under Line from 1985 - 2018", x ="NFL Season", y = "Over/Under Line")
+```
+
+Correlation
+
+```{r}
+corrData <- nflModelData
+
+corrData$schedule_playoff <- as.character(corrData$schedule_playoff)
+corrData$schedule_playoff[corrData$schedule_playoff=='FALSE'] = 0
+corrData$schedule_playoff[corrData$schedule_playoff=='TRUE'] = 1
+corrData$schedule_playoff <- as.numeric(corrData$schedule_playoff)
+
+corrData$win_loss <- as.character(corrData$win_loss)
+corrData$win_loss[corrData$win_loss=='underdog'] = 0
+corrData$win_loss[corrData$win_loss=='fav'] = 1
+corrData$win_loss <- as.numeric(corrData$win_loss)
+
+corrData$home_fav <- as.character(corrData$home_fav)
+corrData$home_fav[corrData$home_fav=='home_underdog'] = 0
+corrData$home_fav[corrData$home_fav=='home_fav'] = 1
+corrData$home_fav <- as.numeric(corrData$home_fav)
+
+corrData <- subset(corrData, select = -c(team_favorite_id))
+
+head(corrData)
+```
+
+```{r}
+round(cor(corrData[,1:9]),3)
+```
+
+
+```{r}
+library(corrplot)
+corrData <- as.matrix(corrData)
+corrplot(cor(corrData))
+```
