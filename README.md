@@ -278,7 +278,7 @@ nfl_df <- nfl_df %>%
   mutate(win_loss = if_else(win_loss == "fav", 1, 0)) %>%
   mutate(home_fav = if_else(home_fav == "home_fav", 1, 0))
 
-# training/testing split with most recent 6 years being in testing
+# training/testing split
 training_set <- nfl_df[nfl_df$schedule_season <= cut_off, ]
 testing_set <- nfl_df[nfl_df$schedule_season > cut_off, ]
 ```
