@@ -243,7 +243,6 @@ nfl_df <- complete(imputed_data, 1)
 ```
 
 ### Modeling
-
 Normalizing, then separating into training/testing.
 
 ```r
@@ -370,6 +369,7 @@ In the end, our ensemble model outperformed the logistic regression by 0.3%, a v
 
 ![](images/ensemble_results.PNG)
 
+### Betting Real Money!
 After building this model, a group of friends and I felt confident enough to pool together $200 between five of us to start making bets on the model predictions, below is an example of us winning a Moneyline bet on the Baltimore Ravens:
 
 ![](images/betting.PNG)
@@ -377,7 +377,14 @@ After building this model, a group of friends and I felt confident enough to poo
 Stay tuned until the end of the 2019 season where I will announce our total winnings/losses! 
 
 ## Conclusion & Next Steps
+All in all, I learned a lot about cleaning data in r, sports betting, and the different types of classical ML algorithms one can apply to solves problems like this. 
+
+Next Steps:
+* Find or create more interesting features (player injury rate, rolling average win rate, head-to-head win rate, win streak)
+* Fine-tune each model before inputting into the ensemble
+* Research a way to fine-tune the ensemble for higher predictive power
+* Explore different betting strategies to maximize financial gain, perhaps even to the extent of layering an additional model that optimizes for the most money won.
+* Continue making bets!
 
 ## Contact
-
 Feel free to email me at shawnliu30@gmail.com if you want to talk about this project or data science in general!
