@@ -30,7 +30,15 @@ The concept of betting on totals, or Over/Under, is quite simplistic. The bettor
 In the parity driven NFL, the phrase “any given Sunday” is more prevalent than ever, which is why Moneyline bets can be very profitable when betting on the underdog. A Moneyline wager is one that is placed on either the favorite or the underdog to win straight up. optimizing Moneyline bets will be the focus of this project.
 
 ## Description of my Current Process
+Here's a breakdown of the steps I took and the conclusion I arrived at:
 
+First, I found three different datasets online that will make up the features that I will be testing. They are: 
+
+### 1) Spreadspoke 
+
+### 2) Teams
+
+### 3) Fivethirtyeight ELO 
 
 ## Conclusion & Next Steps
 
