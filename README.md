@@ -41,7 +41,22 @@ Betting websites like www.spreadspoke.com not only release point spread predicti
 Since the spreadspoke data does not contain the team ID of all teams, a separate dataset of all teams along with their respective short-hands and ID's were found on www.kaggle.com. This dataset will serve as a useful mapping tool for team ID's to team names in case I would want to manipulate home/away team into favourite/underdog team (spoilers, I will!).
 
 ### 3) Fivethirtyeight ELO 
-Www.fivethirtyeight.com is an online sports blog that develops their own ELO rating of team for each season on a rolling basis. I wanted to use some of their features to see whether or not they added to my model's predictive power.
+Interestingly, www.fivethirtyeight.com is an online sports blog that develops their own ELO rating of team for each season on a rolling basis. I wanted to use some of their features to see whether or not they added to my model's predictive power.
+
+Next, I began importing the data from this repo and did some preliminary analysis of spreadspoke.csv since that is going to be the main dataframe I'll be working with.
+
+```r
+# setting path
+path = "https://raw.githubusercontent.com/peanutshawny/nfl-sports-betting/master/data/"
+spreadspoke = paste(path, "spreadspoke_scores.csv", sep = "")
+teams = paste(path, "nfl_teams.csv", sep = "")
+elo = paste(path, "nfl_elo.csv", sep = "")
+
+# reading in core nfl csv, teams csv, and elo csv
+nfl_df <- read.csv(spreadspoke, header = TRUE, sep = ",")
+teams_df <- read.csv(teams, header = TRUE, sep = ",")
+elo_df <- read.csv(elo, header = TRUE, sep = ",")
+```
 
 ## Conclusion & Next Steps
 
