@@ -368,7 +368,13 @@ print(false_negative_rate)
 
 In the end, our ensemble model outperformed the logistic regression by 0.3%, a very slight improvement.
 
-![](images/ensemble_results.PNG)
+![](images/ensemble results.PNG)
+
+After building this model, a group of friends and I felt confident enough to pool together $200 between five of us to start making bets on the model predictions, below is an example of us winning a Moneyline bet:
+
+![](images/betting.PNG)
+
+Stay tuned until the end of the 2019 season where I will announce our total winnings/losses! 
 
 ## Conclusion & Next Steps
 
