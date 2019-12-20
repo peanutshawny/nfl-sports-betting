@@ -59,11 +59,76 @@ teams_df <- read.csv(teams, header = TRUE, sep = ",")
 elo_df <- read.csv(elo, header = TRUE, sep = ",")
 ```
 
-The data looks to be mostly normal, except for the over 2,400 missing values for spread_favorite and over_under_line as they should be some of our main predictors. Upon closer inspection, all spread_favorite and over_under_line is missing for any season before 1978, and should be taken into account before training the model. There also seems to be sporadically-missing weather data, which is small enough that most of it can be fixed through imputation, with the exception of weather_humidity with over 7,500 missing values
+The data looks to be mostly normal, except for the over 2,400 missing values for spread_favorite and over_under_line as they should be some of our main predictors. Upon closer inspection, all spread_favorite and over_under_line is missing for any season before 1978, and should be taken into account before training the model. There also seems to be sporadically-missing weather data, which is small enough that most of it can be fixed through imputation, with the exception of weather_humidity with over 7,500 missing values.
 
 ![](images/nfl_df_summary.PNG)
 
-I then 
+I then removed unecessary features from teams_df, then right outer joining teams_df onto nfl_df and renaming the column names to be team ID's. This will prove useful in mapping home/away teams to favorite/underdog teams later on.
+
+```r
+# dropping unnecessary features from teams_df
+teams_df <- teams_df[, c(1, 3)]
+
+# merging with nfl_df to map team ids to team names
+nfl_df <- merge(nfl_df, teams_df, by.x = "team_home", by.y = "team_name")
+nfl_df <- merge(nfl_df, teams_df, by.x = "team_away", by.y = "team_name")
+
+# renaming column names
+colnames(nfl_df)[c(18, 19)] <- c("home_id", "away_id")
+```
+
+Deleting all rows with blank favourite ID's.
+
+```r
+nfl_df <- subset(nfl_df, team_favorite_id != "")
+
+# replacing all remaining blanks into NA's
+nfl_df[nfl_df == ""] <- NA
+```
+
+Making sure each home/away id matches with each favorite/not favorite id and mapping new scores.
+
+```r
+# setting factors to characters so as to avoid errors
+nfl_df$home_id <- as.character(nfl_df$home_id)
+nfl_df$away_id <- as.character(nfl_df$away_id)
+
+# mapping scores to favorite team instead of home/away to create win/loss variable
+nfl_df <- mutate(.data = nfl_df, score_fav = if_else(home_id == team_favorite_id, 
+                                                     score_home, score_away))
+nfl_df <- mutate(.data = nfl_df, score_notfav = if_else(home_id == team_favorite_id, 
+                                                     score_away, score_home))
+
+# mapping new scores to fav/notfav teams
+nfl_df <- mutate(.data = nfl_df, win_loss = if_else(score_fav > score_notfav, "fav", "underdog"))
+```
+Adding home/away win variable, editing weather detail variable to specify indoor/outdoor conditions. Any absence of "DOME" is presumed to have been played outdoors with the roof open
+
+```r
+# setting weather detail to character so as to avoid errors
+nfl_df$weather_detail <- as.character(nfl_df$weather_detail)
+
+# need to map out all unique values of weather detail
+nfl_df <- mutate(.data = nfl_df, indoor_outdoor = if_else(startsWith(weather_detail, "DOME"), 
+                                                          "indoors", "outdoors"))
+
+# deleting original weather detail feature
+nfl_df$weather_detail <- NULL
+```
+
+Filling in numbers to represent different playoff weeks.
+
+```r
+nfl_df$schedule_week <- as.character(nfl_df$schedule_week)
+
+nfl_df$schedule_week[nfl_df$schedule_week == "18"] = "17"
+nfl_df$schedule_week[nfl_df$schedule_week == "Wildcard"] <- "18"
+nfl_df$schedule_week[nfl_df$schedule_week == "Division"] <- "19"
+nfl_df$schedule_week[nfl_df$schedule_week == "Conference"] <- "20"
+nfl_df$schedule_week[nfl_df$schedule_week == "Superbowl"] <- "21"
+
+nfl_df$schedule_week <- as.numeric(nfl_df$schedule_week)
+```
 
 ## Conclusion & Next Steps
 
