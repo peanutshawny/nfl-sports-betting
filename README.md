@@ -328,6 +328,8 @@ misclassification_rate <- wrong/nrow(testing_set)
 print(misclassification_rate)
 ```
 
+Below are the results of my three models before any major hyperparameter tuning. It's good to see that at around 70% accuracy, my models beat the 57% of the home team winning.
+
 ![](images/model_results.PNG)
 
 Because I was curious about ensemble methods, I decided to then build an ensemble model that used a max voting method to combine these three models and see if the accuracy improves. I first had to test the correlation between all model predictions, as there is not to voting if all models output similar predictions.
