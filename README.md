@@ -308,7 +308,7 @@ log_predictions <- predict(log_model, testing_set, type = "response")
 log_predictions <- round(log_predictions)
 ```
 
-Evaluating errors, including the misclassification rate, false positive rate, and false negative rate.
+Evaluating errors in the form of a misclassification rate.
 
 ```r
 # svm error
@@ -341,7 +341,7 @@ pred_df <- data.frame(svm_predictions, forest_predictions, log_predictions)
 cor(pred_df)
 ```
 
-Seems the models are approaching, but don't reach the threshold for high correlation of 0.75. It seems reasonable to still build the ensemble.
+Seems the models are approaching, but don't reach the threshold for high correlation of 0.75. It seems reasonable to still build the ensemble. 
 
 ```r
 # building ensemble predictions that performs a majority vote 
@@ -365,9 +365,11 @@ print(false_positive_rate)
 print(false_negative_rate)
 ```
 
-In the end, our ensemble model outperformed the logistic regression by 0.3%, a very slight improvement.
+In addition to a misclassification rate, I also added a false positive and false negative rate to see how often the model predicts the favorite team or underdog team to win incorrectly. In the end, our ensemble model outperformed the logistic regression by 0.3%, a very slight improvement.
 
 ![](images/ensemble_results.PNG)
+
+It's interesting to see the false positive rate (falsely predicting the favorite team to win) being so much higher than the false negative rate (falsely predicting the underdog team to win). This might stem from an imbalance of data in this dataset, since most games have the favorite teams winning. There could also be not enough features that predict the possibility of an upset, such as winstreak (that effectively measure momentum) or injury rate (star player not being able to play).
 
 ### Betting Real Money!
 After building this model, a group of friends and I felt confident enough to pool together $200 between five of us to start making bets on the model predictions, below is an example of us winning a Moneyline bet on the Baltimore Ravens:
