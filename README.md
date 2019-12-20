@@ -43,8 +43,7 @@ Since the spreadspoke data does not contain the team ID of all teams, a separate
 ### 3) Fivethirtyeight ELO 
 Interestingly, www.fivethirtyeight.com is an online sports blog that develops their own ELO rating of team for each season on a rolling basis. I wanted to use some of their features to see whether or not they added to my model's predictive power.
 
-
-
+### Cleaning
 Next, I began importing the data from this repo and did some preliminary analysis of spreadspoke.csv since that is going to be the main dataframe I'll be working with.
 
 ```r
@@ -59,6 +58,12 @@ nfl_df <- read.csv(spreadspoke, header = TRUE, sep = ",")
 teams_df <- read.csv(teams, header = TRUE, sep = ",")
 elo_df <- read.csv(elo, header = TRUE, sep = ",")
 ```
+
+The data looks to be mostly normal, except for the over 2,400 missing values for spread_favorite and over_under_line as they should be some of our main predictors. Upon closer inspection, all spread_favorite and over_under_line is missing for any season before 1978, and should be taken into account before training the model. There also seems to be sporadically-missing weather data, which is small enough that most of it can be fixed through imputation, with the exception of weather_humidity with over 7,500 missing values
+
+![](images/nfl_df_summary.PNG)
+
+I then 
 
 ## Conclusion & Next Steps
 
