@@ -343,6 +343,8 @@ cor(pred_df)
 
 Seems the models are approaching, but don't reach the threshold for high correlation of 0.75. It seems reasonable to still build the ensemble. 
 
+![](images/results_corr.PNG)
+
 ```r
 # building ensemble predictions that performs a majority vote 
 ensemble_predictions <- pred_df %>%
