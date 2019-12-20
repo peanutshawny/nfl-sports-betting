@@ -192,7 +192,7 @@ nfl_df <- nfl_df %>% mutate(fav_elo = if_else(home_id == team_favorite_id, home_
   mutate(fav_elo_diff = fav_elo - underdog_elo) 
 ```
 
-Adding the "underdog/favorite home team" feature.
+Adding the "underdog/favorite home team" feature. I had a hunch that the favorite team would have a higher chance of winning when they also the home team, since home teams by default win 57% of games. In contrast, the underdog team would also have a higher chance of winning if they were playing at home, balancing the odds in their favor.
 
 ```r
 nfl_df <- mutate(.data = nfl_df, home_fav = if_else(home_id == team_favorite_id, "home_fav", "home_underdog"))
@@ -242,6 +242,131 @@ imputed_data <- mice(data = nfl_df, m = 5, method = "pmm", maxit = 5, seed = 500
 nfl_df <- complete(imputed_data, 1)
 ```
 
+### Modeling
+
+Normalizing, then separating into training/testing.
+
+```r
+# re-arranging and making sure all features are in the correct order in order to normalize
+nfl_df <- nfl_df[, c(3, 8, 10, 1, 2, 4, 5, 7, 9)]
+```
+
+Calculating the size of training/testing, mean/sd of schedule seasons, and the appropriate cut off date before normalizing, as normalization is detrimental to the interpretation of the season feature. I benchmarked the testing set to be 20% of the data and calculated the number of years from the total number of years still present in the dataset.
+
+```r
+# optimal testing size
+test_size <- 0.2
+total_years <- max(nfl_df$schedule_season) - min(nfl_df$schedule_season)
+test_years <- round(test_size * total_years)
+
+season_mean <- mean(c(min(nfl_df$schedule_season):max(nfl_df$schedule_season)))
+season_sd <- sd(c(min(nfl_df$schedule_season):max(nfl_df$schedule_season)))
+
+cut_off <- ((max(nfl_df$schedule_season) - test_years) - season_mean)/season_sd
+
+# characterizing and normalizing
+for (i in 1:ncol(nfl_df)){
+  if (i <= 3){
+    nfl_df[, i] = as.character(nfl_df[, i])
+  } else {
+    nfl_df[, i] = (nfl_df[, i] - mean(nfl_df[, i]))/sd(nfl_df[, i])
+  }
+}
+
+# converting into dummies for consistency among models
+nfl_df <- nfl_df %>%
+  mutate(schedule_playoff = if_else(schedule_playoff == "TRUE", 1, 0)) %>%
+  mutate(win_loss = if_else(win_loss == "fav", 1, 0)) %>%
+  mutate(home_fav = if_else(home_fav == "home_fav", 1, 0))
+
+# training/testing split with most recent 6 years being in testing
+training_set <- nfl_df[nfl_df$schedule_season <= cut_off, ]
+testing_set <- nfl_df[nfl_df$schedule_season > cut_off, ]
+```
+
+This should be the final dataset before going into the modeling phase. All cateogrical features have been made into dummies for ease of training between different models. All numerical features have been normalized before being split up into training/testing.
+
+![](images/final_df.PNG)
+
+Building Models, including a KNN, Randomforest, Logistic Regression, and SVM.
+
+```r
+svm_model <- svm(win_loss ~., data = training_set, kernel = "radial", cost = 5)
+forest_model <- randomForest(win_loss ~., data = training_set, ntree = 150 )
+log_model <- glm(win_loss ~., data = training_set, family = binomial(logit))
+```
+
+Making predictions and rounding to later calculate misclassification.
+
+```r
+svm_predictions <- predict(svm_model, testing_set, type = "response")
+svm_predictions <- round(svm_predictions)
+
+forest_predictions <- predict(forest_model, testing_set, type = "response")
+forest_predictions <- round(forest_predictions)
+
+log_predictions <- predict(log_model, testing_set, type = "response")
+log_predictions <- round(log_predictions)
+```
+
+Evaluating errors, including the misclassification rate, false positive rate, and false negative rate.
+
+```r
+# svm error
+wrong <- sum(svm_predictions != testing_set$win_loss)
+misclassification_rate <- wrong/nrow(testing_set)
+print(misclassification_rate)
+
+# random forest errors
+wrong <- sum(forest_predictions != testing_set$win_loss)
+misclassification_rate <- wrong/nrow(testing_set)
+print(misclassification_rate)
+
+# logistic regression error
+wrong <- sum(log_predictions != testing_set$win_loss)
+misclassification_rate <- wrong/nrow(testing_set)
+print(misclassification_rate)
+```
+
+![](images/model_results.PNG)
+
+Because I was curious about ensemble methods, I decided to then build an ensemble model that used a max voting method to combine these three models and see if the accuracy improves. I first had to test the correlation between all model predictions, as there is not to voting if all models output similar predictions.
+
+```r
+# building prediction dataframe
+pred_df <- data.frame(svm_predictions, forest_predictions, log_predictions)
+
+# measuring correlation between model predictions
+cor(pred_df)
+```
+
+Seems the models are approaching, but don't reach the threshold for high correlation of 0.75. It seems reasonable to still build the ensemble.
+
+```r
+# building ensemble predictions that performs a majority vote 
+ensemble_predictions <- pred_df %>%
+  rowwise() %>%
+  transmute(en_pred = if_else(sum(svm_predictions, forest_predictions, log_predictions) >= 2, 
+                              1, 0))
+
+# calculating misclassification/FP/FN
+wrong <- sum(ensemble_predictions != testing_set$win_loss)
+misclassification_rate <- wrong/nrow(testing_set)
+print(misclassification_rate)
+
+false_positive <- sum(ensemble_predictions == 1 & testing_set$win_loss == 0)
+false_negative <- sum(ensemble_predictions == 0 & testing_set$win_loss == 1)
+
+false_positive_rate <- false_positive/nrow(testing_set)
+false_negative_rate <- false_negative/nrow(testing_set)
+
+print(false_positive_rate)
+print(false_negative_rate)
+```
+
+In the end, our ensemble model outperformed the logistic regression by 0.3%, a very slight improvement.
+
+![](images/ensemble_results.PNG)
 
 ## Conclusion & Next Steps
 
