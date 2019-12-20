@@ -43,6 +43,8 @@ Since the spreadspoke data does not contain the team ID of all teams, a separate
 ### 3) Fivethirtyeight ELO 
 Interestingly, www.fivethirtyeight.com is an online sports blog that develops their own ELO rating of team for each season on a rolling basis. I wanted to use some of their features to see whether or not they added to my model's predictive power.
 
+
+
 Next, I began importing the data from this repo and did some preliminary analysis of spreadspoke.csv since that is going to be the main dataframe I'll be working with.
 
 ```r
