@@ -13,7 +13,7 @@ The purpose of this project is to be able to accurately predict the outcome of N
 * Ensemble Methods
 
 ### Technologies/Languages
-* R Notebook
+* R and RStudio
 
 ## Project Description
 Being extremely interested in football, I decided to try and predict the outcome of NFL games using data I found on Kaggle, score spreads from sports betting websites, ELO predictions from fivethirtyeight, and some of my own features, to try and see if I can make accurate predictions this season and (hopefully) make some money in the process. In the NFL the home team wins 57% of the time. This can serve as a perfect benchmark when predicting the results of games.
