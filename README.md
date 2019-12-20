@@ -102,7 +102,7 @@ nfl_df <- mutate(.data = nfl_df, score_notfav = if_else(home_id == team_favorite
 # mapping new scores to fav/notfav teams
 nfl_df <- mutate(.data = nfl_df, win_loss = if_else(score_fav > score_notfav, "fav", "underdog"))
 ```
-Adding home/away win variable, editing weather detail variable to specify indoor/outdoor conditions. Any absence of "DOME" is presumed to have been played outdoors with the roof open
+Adding home/away win variable, editing weather detail variable to specify indoor/outdoor conditions. Any absence of "DOME" is presumed to have been played outdoors with the roof open.
 
 ```r
 # setting weather detail to character so as to avoid errors
@@ -129,6 +129,119 @@ nfl_df$schedule_week[nfl_df$schedule_week == "Superbowl"] <- "21"
 
 nfl_df$schedule_week <- as.numeric(nfl_df$schedule_week)
 ```
+Grouping elo data by different teams over different time periods. I cut elo_df into two (team1 and team2) to make it easier to work with. Specifically, I thought grouping elo data by year would yield the best results, as team performance could theorietically be averaged out during a season, leading to more stable predictions. This avoided the issue of mapping the exact games by date. The threshold year of 1998 was created to ensure that older games, which should not be accurate depictions of future games, are ommitted from the model.
+
+```r
+# cutting out all elo data before threshold year
+threshold_year <- 1998
+elo_df <- subset(elo_df, season > threshold_year)
+
+# cutting elo_df into two and grouping by team and year, taking the mean qelos of each team
+elo_df1 <- elo_df[, c(2, 5, 9, 11, 21, 27)]
+elo_df2 <- elo_df[, c(2, 6, 10, 12, 22, 28)]
+
+elo_df1 <- subset(elo_df1, is.na(elo1_post) == FALSE)
+elo_df2 <- subset(elo_df2, is.na(elo2_post) == FALSE)
+
+# grouping and summarising
+elo_df1 <- group_by(elo_df1, season, team1)
+elo_df2 <- group_by(elo_df2, season, team2)
+
+elo_df1 <- elo_df1 %>%
+  summarise(elo_prob1 = mean(elo_prob1),
+                        elo1_post = mean(elo1_post),
+                        qbelo_prob1 = mean(qbelo_prob1),
+                        qbelo1_post = mean(qbelo1_post))
+elo_df2 <- elo_df2 %>%
+  summarise(elo_prob2 = mean(elo_prob2),
+                        elo2_post = mean(elo2_post),
+                        qbelo_prob2 = mean(qbelo_prob2),
+                        qbelo2_post = mean(qbelo2_post))
+
+# changing the name of a column for ease of merging
+names(elo_df2)[2] <- "team1"
+
+# recombining the dataframes and joining onto nfl_df
+elo_df <- merge(elo_df1, elo_df2, by = c("team1", "season"))
+```
+
+Taking the mean of a feature depending on when a team has been home/away, then joining onto nfl_df by season and team ID. I only joined on raw ELO score, as all metrics in the dataset were highly correlated.
+
+```r
+# joining onto nfl_df and mapping respective features to fav/underdog teams
+elo_df <- elo_df %>%
+  rowwise()%>%
+  mutate(elo_prob = mean(c(elo_prob1, elo_prob2))) %>%
+  mutate(elo = mean(c(elo1_post, elo2_post))) %>%
+  mutate(qbelo_prob = mean(c(qbelo_prob1, qbelo_prob2))) %>%
+  mutate(qbelo = mean(c(qbelo1_post, qbelo2_post))) 
+
+elo_df <- elo_df[, -c(3:10)]
+
+# joining on only elo, all other variables were extremely similar
+elo_df <- elo_df[, c(1, 2, 4)]
+
+nfl_df <- merge(nfl_df, elo_df, by.x = c("schedule_season", "home_id"), by.y = c("season", "team1"), all = TRUE)
+nfl_df <- merge(nfl_df, elo_df, by.x = c("schedule_season", "away_id"), by.y = c("season", "team1"), all = TRUE)
+
+# changing elo column names, then taking qbelo differential and mapping onto fav/underdog teams
+colnames(nfl_df)[c(23:24)] <- c("home_elo", "away_elo")
+
+nfl_df <- nfl_df %>% mutate(fav_elo = if_else(home_id == team_favorite_id, home_elo, away_elo)) %>%
+  mutate(underdog_elo = if_else(home_id == team_favorite_id, away_elo, home_elo)) %>%
+  mutate(fav_elo_diff = fav_elo - underdog_elo) 
+```
+
+Adding the "underdog/favorite home team" feature.
+
+```r
+nfl_df <- mutate(.data = nfl_df, home_fav = if_else(home_id == team_favorite_id, "home_fav", "home_underdog"))
+```
+
+Deleting all unecessary features.
+
+```r
+# deleting all rows with NA favorite ID's and anything before a certain year
+nfl_df <- subset(nfl_df, team_favorite_id != "")
+nfl_df <- subset(nfl_df, schedule_season > threshold_year)
+
+# using only 13 features
+nfl_df <- nfl_df[, c(1, 7, 8, 12, 13, 16, 17, 18, 21, 22, 27, 28)]
+```
+
+Imputing NA values using various methods from the MICE package
+
+```r
+# plotting missing values
+aggr_plot <- aggr(nfl_df, col=c('navyblue','red'), numbers = TRUE, sortVars = TRUE, 
+                  labels=names(nfl_df), cex.axis=.7, gap=3, ylab=c("Histogram of missing data","Pattern"))
+
+```
+
+![](images/aggr_plot1.PNG)
+
+Because over 70% of indoor_outdoor and over 50% of weather_humidity is missing, I will need to delete those columns as I have no way of imputing the data accurately.
+
+```r
+nfl_df$indoor_outdoor <- NULL
+nfl_df$weather_humidity <- NULL
+
+aggr_plot <- aggr(nfl_df, col=c('navyblue','red'), numbers = TRUE, sortVars = TRUE, 
+                  labels=names(nfl_df), cex.axis=.7, gap=3, ylab=c("Histogram of missing data","Pattern"))
+```
+
+![](images/aggr_plot2.PNG)
+
+As all features now all fall within the exceptable range of NA values (~5%), I used the mice package to impute all missing values with the predictive mean value method.
+
+```r
+# create a mice dataset
+imputed_data <- mice(data = nfl_df, m = 5, method = "pmm", maxit = 5, seed = 500)
+
+# complete the imputation
+nfl_df <- complete(imputed_data, 1)
+```
+
 
 ## Conclusion & Next Steps
 
