@@ -378,7 +378,7 @@ After building this model, a group of friends and I felt confident enough to poo
 
 ![](images/betting.PNG)
 
-Stay tuned until the end of the 2019 season where I will announce our total winnings/losses! 
+Stay tuned until the end of the 2019 season where I will announce our total winnings/losses! (Update - We lost over $300 in the regular season...)
 
 ## Conclusion & Next Steps
 All in all, I learned a lot about cleaning data in r, sports betting, and the different types of classical ML algorithms one can apply to solves problems like this. 
